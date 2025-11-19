@@ -1,20 +1,164 @@
+import React from 'react';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useLiveMatches } from './src/hooks/useLiveMatches';
+import { MatchCard } from './src/components/MatchCard';
+import { colors } from './src/theme/colors';
 
 export default function App() {
+  const { data, loading, refreshing, onRefresh } = useLiveMatches('football');
+  const { width } = useWindowDimensions();
+  const isCompact = width < 640;
+  const numColumns = isCompact ? 1 : 2;
+
+  const renderContent = () => {
+    if (loading && !refreshing) {
+        return (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={colors.accent} />
+            <Text style={styles.loadingText}>Načítavam zápasy...</Text>
+          </View>
+        );
+    }
+
+    return (
+      <FlatList
+        key={numColumns}
+        data={data}
+        keyExtractor={(item) => item.fixture.id.toString()}
+        renderItem={({ item }) => <MatchCard match={item} />}
+        numColumns={numColumns}
+        contentContainerStyle={[styles.listContent, isCompact && styles.listContentCompact]}
+        columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
+        showsVerticalScrollIndicator={false}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        ListEmptyComponent={
+            <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>Žiadne živé zápasy</Text>
+                <Text style={styles.emptySubText}>Skúste potiahnuť pre obnovenie</Text>
+            </View>
+        }
+      />
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <StatusBar style="light" backgroundColor={colors.background} />
+        <View style={[styles.shell, isCompact && styles.shellCompact]}>
+          <View style={[styles.header, isCompact && styles.headerCompact]}>
+            <View>
+              <Text style={styles.headerTitle}>LiveScore</Text>
+              <Text style={styles.headerSubtitle}>Futbalové výsledky</Text>
+            </View>
+            <View style={styles.liveIndicator}>
+              <View style={styles.liveDotPulse} />
+              <Text style={styles.liveCount}>{data.length} Live</Text>
+            </View>
+          </View>
+          {renderContent()}
+        </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  shell: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 1024,
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+  },
+  shellCompact: {
+    paddingHorizontal: 12,
+  },
+  center: {
+    flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: colors.textSecondary,
+    marginTop: 12,
+    fontSize: 14,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    marginBottom: 10,
+  },
+  headerCompact: {
+    paddingHorizontal: 12,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  liveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  liveDotPulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.accent,
+    marginRight: 6,
+  },
+  liveCount: {
+    color: colors.accent,
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  listContent: {
+    paddingHorizontal: 6,
+    paddingBottom: 48,
+    paddingTop: 6,
+  },
+  listContentCompact: {
+    paddingHorizontal: 0,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    columnGap: 16,
+    marginBottom: 4,
+  },
+  emptyState: {
+    alignItems: 'center',
+    marginTop: 100,
+    padding: 20,
+  },
+  emptyText: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  emptySubText: {
+    color: colors.textSecondary,
+    fontSize: 14,
   },
 });
