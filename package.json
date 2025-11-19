@@ -4,18 +4,21 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "start": "env-cmd -f .env expo start",
+    "android": "env-cmd -f .env expo start --android",
+    "ios": "env-cmd -f .env expo start --ios",
+    "web": "env-cmd -f .env expo start --web"
   },
   "dependencies": {
     "@expo/metro-runtime": "^6.1.2",
+    "env-cmd": "^11.0.0",
     "expo": "~54.0.25",
+    "expo-constants": "~18.0.10",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
     "react-dom": "^19.1.0",
     "react-native": "0.81.5",
+    "react-native-dotenv": "^3.4.11",
     "react-native-web": "^0.21.2"
   },
   "devDependencies": {
