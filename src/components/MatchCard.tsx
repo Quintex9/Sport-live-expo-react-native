@@ -3,10 +3,13 @@ import { View, Text, StyleSheet, Image, Platform } from 'react-native';
 import { Match } from '../types/match';
 import { colors } from '../theme/colors';
 
+// Komponent pre zobrazenie jedného zápasu
 export const MatchCard = ({ match }: { match: Match }) => {
   const { teams, goals, fixture } = match;
+  // Zistíme, či je zápas práve "LIVE" (nie je ukončený ani nezačal)
   const isLive = fixture.status.short !== 'FT' && fixture.status.short !== 'NS';
 
+  // Helper komponent pre logo tímu (rieši aj chýbajúce logo)
   const Logo = ({ uri, name }: { uri?: string; name?: string }) => (
     <View style={styles.logoBox}>
       {uri ? (
@@ -20,6 +23,7 @@ export const MatchCard = ({ match }: { match: Match }) => {
   return (
     <View style={styles.wrap}>
       <View style={styles.card}>
+        {/* Hlavička: Čas alebo Live indikátor */}
         <View style={styles.head}>
           {isLive ? (
             <View style={styles.liveBadge}>
@@ -35,6 +39,7 @@ export const MatchCard = ({ match }: { match: Match }) => {
             </Text>
           )}
         </View>
+        {/* Obsah zápasu: Domáci - Skóre - Hostia */}
         <View style={styles.row}>
           <View style={styles.col}>
             <Logo uri={teams.home.logo} name={teams.home.name} />
@@ -71,6 +76,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderWidth: 1,
     borderColor: colors.border,
+    // Platformovo špecifické tiene
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -141,7 +147,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 18, // Kruhové orezanie loga
   },
   initials: {
     color: colors.textSecondary,
@@ -153,7 +159,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
-    minHeight: 32,
+    minHeight: 32, // Fixná výška pre max 2 riadky textu
   },
   scoreBox: {
     backgroundColor: 'rgba(0,0,0,0.2)',
@@ -168,7 +174,7 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontSize: 18,
     fontWeight: '800',
-    fontVariant: ['tabular-nums'],
+    fontVariant: ['tabular-nums'], // Zarovnanie číslic
     letterSpacing: 1,
   },
 });

@@ -7,11 +7,15 @@ import { MatchCard } from './src/components/MatchCard';
 import { colors } from './src/theme/colors';
 
 export default function App() {
+  // Načítanie dát z custom hooku
   const { data, loading, refreshing, onRefresh } = useLiveMatches('football');
+  
+  // Responzívny layout (1 stĺpec pre mobil, 2 pre tablet/desktop)
   const { width } = useWindowDimensions();
   const isCompact = width < 640;
   const numColumns = isCompact ? 1 : 2;
 
+  // Renderovanie obsahu podľa stavu (loading / data)
   const renderContent = () => {
     if (loading && !refreshing) {
         return (
@@ -24,7 +28,7 @@ export default function App() {
 
     return (
       <FlatList
-        key={numColumns}
+        key={numColumns} // Zmena kľúča vynúti re-render pri zmene layoutu
         data={data}
         keyExtractor={(item) => item.fixture.id.toString()}
         renderItem={({ item }) => <MatchCard match={item} />}
@@ -48,7 +52,10 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <StatusBar style="light" backgroundColor={colors.background} />
+        {/* Shell obmedzuje maximálnu šírku na veľkých obrazovkách */}
         <View style={[styles.shell, isCompact && styles.shellCompact]}>
+          
+          {/* Hlavička aplikácie */}
           <View style={[styles.header, isCompact && styles.headerCompact]}>
             <View>
               <Text style={styles.headerTitle}>LiveScore</Text>
@@ -59,6 +66,7 @@ export default function App() {
               <Text style={styles.liveCount}>{data.length} Live</Text>
             </View>
           </View>
+          
           {renderContent()}
         </View>
       </SafeAreaView>

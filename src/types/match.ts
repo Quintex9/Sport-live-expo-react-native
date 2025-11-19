@@ -1,11 +1,12 @@
+// Definícia TypeScript rozhrania pre dáta zápasu z API
 export interface Match {
   fixture: {
     id: number;
-    date: string;
+    date: string; // ISO dátum zápasu
     status: {
-      elapsed: number;
-      long: string;
-      short: string;
+      elapsed: number; // Odohrané minúty
+      long: string;    // Dlhý popis stavu (napr. "Match Finished")
+      short: string;   // Skratka stavu (napr. "FT", "1H")
     };
     venue: {
       name: string;
@@ -23,7 +24,7 @@ export interface Match {
     home: {
       name: string;
       logo?: string;
-      winner?: boolean;
+      winner?: boolean; // True, ak vyhrali
     };
     away: {
       name: string;
@@ -32,8 +33,7 @@ export interface Match {
     };
   };
   goals: {
-    home: number | null;
+    home: number | null; // Počet gólov (null ak ešte nezačalo)
     away: number | null;
   };
 }
-
