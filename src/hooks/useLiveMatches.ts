@@ -32,10 +32,12 @@ export const useLiveMatches = (sport: string = 'football') => {
     }
   }, [sport]);
 
-  // Automatické načítanie pri prvom spustení (alebo zmene športu)
+  // reset pri zmene športu
   useEffect(() => {
+    setData([])
+    setLoading(true);
     loadMatches();
-  }, [loadMatches]);
+  }, [sport]);
 
   // Handler pre manuálne obnovenie (napr. potiahnutím zoznamu)
   const onRefresh = () => {

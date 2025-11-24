@@ -5,7 +5,9 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useLiveMatches } from './src/hooks/useLiveMatches';
 import { MatchCard } from './src/components/MatchCard';
 import { colors } from './src/theme/colors';
-import { Match } from './src/types/match';
+import { SportButtons } from './src/components/SportButtons';
+import { Header } from './src/components/Header';
+
 
 export default function App() {
   //State pre zistenie aktuálneho športu
@@ -18,16 +20,6 @@ export default function App() {
   const { width } = useWindowDimensions();
   const isCompact = width < 640;
   const numColumns = isCompact ? 1 : 2;
-
-  //Sporty
-  const SPORTS = [
-    { id: "football", label: "Futbal" },
-    { id: "baseball", label: "Baseball" },
-    { id: "basketball", label: "Basketbal" },
-    { id: "nfl", label: "NFL" },
-    { id: "hockey", label: "Hokej" },
-    { id: "handball", label: "Hádzaná" }
-  ]
 
   // Renderovanie obsahu podľa stavu (loading / data)
   const renderContent = () => {
@@ -70,39 +62,10 @@ export default function App() {
         <View style={[styles.shell, isCompact && styles.shellCompact]}>
 
           {/* Hlavička aplikácie */}
-          <View style={[styles.header, isCompact && styles.headerCompact]}>
-            <View>
-              <Text style={styles.headerTitle}>LiveScore</Text>
-              <Text style={styles.headerSubtitle}>Futbalové výsledky</Text>
-            </View>
-            <View style={styles.liveIndicator}>
-              <View style={styles.liveDotPulse} />
-              <Text style={styles.liveCount}>{data.length} Live</Text>
-            </View>
-          </View>
+          <Header sport={sport} count={data.length}></Header>
 
           {/* Športové menu */}
-          <View style={styles.sportsMenu}>
-            <FlatList
-              data={SPORTS}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => {
-                const isActive = item.id === sport;
-                return (
-                  <Text
-                    style={[
-                      styles.sportItem,
-                      isActive && styles.sportItemActive
-                    ]}
-                    onPress={() => setSport(item.id as any)}>
-                      {item.label}
-                  </Text>
-                );
-              }}
-              />
-          </View>
+          <SportButtons sport={sport} onChange={setSport}  />
 
           {renderContent()}
         </View>
@@ -112,26 +75,7 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  sportsMenu: {
-    flexDirection: "row",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    marginBottom: 6,
-  },
-  sportItem: {
-    backgroundColor: colors.surfaceLight,
-    color: colors.textSecondary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-    marginRight: 10,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  sportItemActive: {
-    backgroundColor: colors.accent,
-    color: "#fff"
-  },
+
   container: {
     flex: 1,
     backgroundColor: colors.background,

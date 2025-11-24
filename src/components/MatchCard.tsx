@@ -6,8 +6,12 @@ import { colors } from '../theme/colors';
 // Komponent pre zobrazenie jedného zápasu
 export const MatchCard = ({ match }: { match: Match }) => {
   const { teams, goals, fixture } = match;
-  // Zistíme, či je zápas práve "LIVE" (nie je ukončený ani nezačal)
-  const isLive = fixture.status.short !== 'FT' && fixture.status.short !== 'NS';
+  
+  const statusShort = fixture?.status?.short ?? "NS";
+  const elapsed = fixture?.status?.elapsed ?? 0;
+
+  const isLive = statusShort !== "FT" && statusShort !== "NS";
+
 
   // Helper komponent pre logo tímu (rieši aj chýbajúce logo)
   const Logo = ({ uri, name }: { uri?: string; name?: string }) => (
@@ -28,7 +32,7 @@ export const MatchCard = ({ match }: { match: Match }) => {
           {isLive ? (
             <View style={styles.liveBadge}>
               <View style={styles.dot} />
-              <Text style={styles.liveTxt}>{fixture.status.elapsed}'</Text>
+              <Text style={styles.liveTxt}>{fixture?.status.elapsed}'</Text>
             </View>
           ) : (
             <Text style={styles.time}>

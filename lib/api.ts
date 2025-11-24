@@ -31,6 +31,14 @@ const HOSTS: Record<string, string> = {
   handball: "v1.handball.api-sports.io",
 };
 
+function scoreOrder(status: string) {
+  if (status !== "FT" && status !== "NS") return 0;  // LIVE
+  if (status === "NS") return 1;                    // Not started
+  if (status === "FT") return 2;                    // Finished
+  return 3;
+}
+
+
 
 // Funkcia na získanie živých zápasov podľa športu
 export async function getLiveMatches(sport: string) {
@@ -58,5 +66,5 @@ export async function getLiveMatches(sport: string) {
   // Vráti pole zápasov (response) alebo prázdne pole
   const response = data.response ?? [];
 
-  return response.map(normalizeMatch);
+  return response.map(normalizeMatch).sort((a: any, b: any) => scoreOrder(a.fixture.status.short) - scoreOrder(b.fixture.status.short));
 }
