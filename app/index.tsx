@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, FlatList, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { useLiveMatches } from './src/hooks/useLiveMatches';
-import { MatchCard } from './src/components/MatchCard';
-import { colors } from './src/theme/colors';
-import { SportButtons } from './src/components/SportButtons';
-import { Header } from './src/components/Header';
+import { useLiveMatches } from '../src/hooks/useLiveMatches';
+import { MatchCard } from '../src/components/MatchCard';
+import { colors } from '../src/theme/colors';
+import { SportButtons } from '../src/components/SportButtons';
+import { Header } from '../src/components/Header';
+
 
 
 
@@ -172,3 +173,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+

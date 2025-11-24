@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, Image, Platform, TouchableOpacity } from 'react-native';
 import { Match } from '../types/match';
 import { colors } from '../theme/colors';
+import { Link } from 'expo-router';
 
 // Komponent pre zobrazenie jedného zápasu
 export const MatchCard = ({ match }: { match: Match }) => {
@@ -25,50 +26,56 @@ export const MatchCard = ({ match }: { match: Match }) => {
   );
 
   return (
-    <View style={styles.wrap}>
-      <View style={styles.card}>
-        {/* Hlavička: Čas alebo Live indikátor */}
-        <View style={styles.head}>
-          {isLive ? (
-            <View style={styles.liveBadge}>
-              <View style={styles.dot} />
-              <Text style={styles.liveTxt}>{fixture?.status.elapsed}'</Text>
+    <Link href={`/match/${fixture?.id}`} style={styles.link} asChild>
+        <TouchableOpacity style={styles.wrap}>
+          <View style={styles.card}>
+            {/* Hlavička: Čas alebo Live indikátor */}
+            <View style={styles.head}>
+              {isLive ? (
+                <View style={styles.liveBadge}>
+                  <View style={styles.dot} />
+                  <Text style={styles.liveTxt}>{fixture?.status.elapsed}'</Text>
+                </View>
+              ) : (
+                <Text style={styles.time}>
+                  {new Date(fixture.date).toLocaleTimeString('sk-SK', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Text>
+              )}
             </View>
-          ) : (
-            <Text style={styles.time}>
-              {new Date(fixture.date).toLocaleTimeString('sk-SK', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Text>
-          )}
-        </View>
-        {/* Obsah zápasu: Domáci - Skóre - Hostia */}
-        <View style={styles.row}>
-          <View style={styles.col}>
-            <Logo uri={teams.home.logo} name={teams.home.name} />
-            <Text style={styles.name} numberOfLines={2}>
-              {teams.home.name}
-            </Text>
+            {/* Obsah zápasu: Domáci - Skóre - Hostia */}
+            <View style={styles.row}>
+              <View style={styles.col}>
+                <Logo uri={teams.home.logo} name={teams.home.name} />
+                <Text style={styles.name} numberOfLines={2}>
+                  {teams.home.name}
+                </Text>
+              </View>
+              <View style={styles.scoreBox}>
+                <Text style={styles.score}>
+                  {goals.home ?? 0} : {goals.away ?? 0}
+                </Text>
+              </View>
+              <View style={styles.col}>
+                <Logo uri={teams.away.logo} name={teams.away.name} />
+                <Text style={styles.name} numberOfLines={2}>
+                  {teams.away.name}
+                </Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.scoreBox}>
-            <Text style={styles.score}>
-              {goals.home ?? 0} : {goals.away ?? 0}
-            </Text>
-          </View>
-          <View style={styles.col}>
-            <Logo uri={teams.away.logo} name={teams.away.name} />
-            <Text style={styles.name} numberOfLines={2}>
-              {teams.away.name}
-            </Text>
-          </View>
-        </View>
-      </View>
-    </View>
+        </TouchableOpacity>
+    </Link>
   );
 };
 
 const styles = StyleSheet.create({
+  link: {
+    // Tento štýl pomôže Linku správať sa správne v mriežke (ak sa použije bez asChild, ale tu používame asChild, takže sa aplikuje na dieťa)
+    flex: 1, 
+  },
   wrap: {
     flex: 1,
     minWidth: 160,
