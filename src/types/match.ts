@@ -1,6 +1,7 @@
 // Definícia TypeScript rozhrania pre dáta zápasu z API
 export interface Match {
-  fixture: {
+  id?: number;
+  fixture?: {
     id: number;
     date: string; // ISO dátum zápasu
     status: {
@@ -14,7 +15,7 @@ export interface Match {
     };
     referee: string;
   };
-  league: {
+  league?: {
     name: string;
     country: string;
     logo?: string;

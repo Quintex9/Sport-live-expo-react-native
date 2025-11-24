@@ -1,36 +1,50 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, FlatList, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useLiveMatches } from './src/hooks/useLiveMatches';
 import { MatchCard } from './src/components/MatchCard';
 import { colors } from './src/theme/colors';
+import { Match } from './src/types/match';
 
 export default function App() {
+  //State pre zistenie aktuálneho športu
+  const [sport, setSport] = useState<'football' | 'basketball' | 'baseball' | 'nfl' | 'hockey' | 'handball'>('football');
+
   // Načítanie dát z custom hooku
-  const { data, loading, refreshing, onRefresh } = useLiveMatches('football');
-  
+  const { data, loading, refreshing, onRefresh } = useLiveMatches(sport);
+
   // Responzívny layout (1 stĺpec pre mobil, 2 pre tablet/desktop)
   const { width } = useWindowDimensions();
   const isCompact = width < 640;
   const numColumns = isCompact ? 1 : 2;
 
+  //Sporty
+  const SPORTS = [
+    { id: "football", label: "Futbal" },
+    { id: "baseball", label: "Baseball" },
+    { id: "basketball", label: "Basketbal" },
+    { id: "nfl", label: "NFL" },
+    { id: "hockey", label: "Hokej" },
+    { id: "handball", label: "Hádzaná" }
+  ]
+
   // Renderovanie obsahu podľa stavu (loading / data)
   const renderContent = () => {
     if (loading && !refreshing) {
-        return (
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color={colors.accent} />
-            <Text style={styles.loadingText}>Načítavam zápasy...</Text>
-          </View>
-        );
+      return (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={styles.loadingText}>Načítavam zápasy...</Text>
+        </View>
+      );
     }
 
     return (
       <FlatList
         key={numColumns} // Zmena kľúča vynúti re-render pri zmene layoutu
         data={data}
-        keyExtractor={(item) => item.fixture.id.toString()}
+        keyExtractor={(item) => String(item.fixture?.id ?? item.id)}
         renderItem={({ item }) => <MatchCard match={item} />}
         numColumns={numColumns}
         contentContainerStyle={[styles.listContent, isCompact && styles.listContentCompact]}
@@ -39,10 +53,10 @@ export default function App() {
         onRefresh={onRefresh}
         refreshing={refreshing}
         ListEmptyComponent={
-            <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>Žiadne živé zápasy</Text>
-                <Text style={styles.emptySubText}>Skúste potiahnuť pre obnovenie</Text>
-            </View>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>Žiadne živé zápasy</Text>
+            <Text style={styles.emptySubText}>Skúste potiahnuť pre obnovenie</Text>
+          </View>
         }
       />
     );
@@ -54,7 +68,7 @@ export default function App() {
         <StatusBar style="light" backgroundColor={colors.background} />
         {/* Shell obmedzuje maximálnu šírku na veľkých obrazovkách */}
         <View style={[styles.shell, isCompact && styles.shellCompact]}>
-          
+
           {/* Hlavička aplikácie */}
           <View style={[styles.header, isCompact && styles.headerCompact]}>
             <View>
@@ -66,7 +80,30 @@ export default function App() {
               <Text style={styles.liveCount}>{data.length} Live</Text>
             </View>
           </View>
-          
+
+          {/* Športové menu */}
+          <View style={styles.sportsMenu}>
+            <FlatList
+              data={SPORTS}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => {
+                const isActive = item.id === sport;
+                return (
+                  <Text
+                    style={[
+                      styles.sportItem,
+                      isActive && styles.sportItemActive
+                    ]}
+                    onPress={() => setSport(item.id as any)}>
+                      {item.label}
+                  </Text>
+                );
+              }}
+              />
+          </View>
+
           {renderContent()}
         </View>
       </SafeAreaView>
@@ -75,6 +112,26 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  sportsMenu: {
+    flexDirection: "row",
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    marginBottom: 6,
+  },
+  sportItem: {
+    backgroundColor: colors.surfaceLight,
+    color: colors.textSecondary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
+    marginRight: 10,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  sportItemActive: {
+    backgroundColor: colors.accent,
+    color: "#fff"
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background,
