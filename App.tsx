@@ -9,6 +9,7 @@ import { SportButtons } from './src/components/SportButtons';
 import { Header } from './src/components/Header';
 
 
+
 export default function App() {
   //State pre zistenie aktuálneho športu
   const [sport, setSport] = useState<'football' | 'basketball' | 'baseball' | 'nfl' | 'hockey' | 'handball'>('football');

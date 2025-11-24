@@ -4,7 +4,7 @@ import { normalizeMatch } from "../src/utils/normalizeMatch";
 // Načítanie API kľúča z konfigurácie (env premenné)
 const API_KEY = Constants.expoConfig?.extra?.APISPORTS_KEY;
 
-//Dnešný dátum
+// Dnešný dátum
 const today = new Date().toISOString().split("T")[0];
 
 
