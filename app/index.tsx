@@ -1,22 +1,28 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View, FlatList, ActivityIndicator, useWindowDimensions, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useLiveMatches } from '../src/hooks/useLiveMatches';
+import { useMatches } from '../src/hooks/useMatches';
 import { MatchCard } from '../src/components/MatchCard';
 import { colors } from '../src/theme/colors';
 import { SportButtons } from '../src/components/SportButtons';
 import { Header } from '../src/components/Header';
 
-
-
-
 export default function App() {
-  //State pre zistenie aktuálneho športu
+  // State pre zistenie aktuálneho športu
   const [sport, setSport] = useState<'football' | 'basketball' | 'baseball' | 'nfl' | 'hockey' | 'handball'>('football');
+  
+  // State pre prepínanie medzi Live a History
+  const [mode, setMode] = useState<'live' | 'history'>('live');
 
-  // Načítanie dát z custom hooku
-  const { data, loading, refreshing, onRefresh } = useLiveMatches(sport);
+  // Načítanie dát z hookov
+  const liveData = useLiveMatches(sport);
+  const historyData = useMatches();
+
+  // Vyber aktívne dáta podľa módu
+  const activeData = mode === 'live' ? liveData : historyData;
+  const { data, loading, refreshing, onRefresh } = activeData;
 
   // Responzívny layout (1 stĺpec pre mobil, 2 pre tablet/desktop)
   const { width } = useWindowDimensions();
@@ -36,10 +42,10 @@ export default function App() {
 
     return (
       <FlatList
-        key={numColumns} // Zmena kľúča vynúti re-render pri zmene layoutu
+        key={`${mode}-${numColumns}`} // Zmena kľúča vynúti re-render pri zmene layoutu alebo módu
         data={data}
         keyExtractor={(item) => String(item.fixture?.id ?? item.id)}
-        renderItem={({ item }) => <MatchCard match={item} />}
+        renderItem={({ item }) => <MatchCard match={item} source={mode === 'history' ? 'history' : undefined} />}
         numColumns={numColumns}
         contentContainerStyle={[styles.listContent, isCompact && styles.listContentCompact]}
         columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
@@ -48,7 +54,9 @@ export default function App() {
         refreshing={refreshing}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>Žiadne živé zápasy</Text>
+            <Text style={styles.emptyText}>
+              {mode === 'live' ? 'Žiadne živé zápasy' : 'Žiadne zápasy'}
+            </Text>
             <Text style={styles.emptySubText}>Skúste potiahnuť pre obnovenie</Text>
           </View>
         }
@@ -66,8 +74,29 @@ export default function App() {
           {/* Hlavička aplikácie */}
           <Header sport={sport} count={data.length}></Header>
 
-          {/* Športové menu */}
-          <SportButtons sport={sport} onChange={setSport}  />
+          {/* Prepínač Live / Zápasy */}
+          <View style={styles.modeToggle}>
+            <TouchableOpacity
+              style={[styles.modeButton, mode === 'live' && styles.modeButtonActive]}
+              onPress={() => setMode('live')}
+            >
+              <View style={[styles.liveDot, mode === 'live' && styles.liveDotActive]} />
+              <Text style={[styles.modeButtonText, mode === 'live' && styles.modeButtonTextActive]}>
+                Live
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modeButton, mode === 'history' && styles.modeButtonActive]}
+              onPress={() => setMode('history')}
+            >
+              <Text style={[styles.modeButtonText, mode === 'history' && styles.modeButtonTextActive]}>
+                Zápasy
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Športové menu - zobraz len pre Live mód */}
+          {mode === 'live' && <SportButtons sport={sport} onChange={setSport} />}
 
           {renderContent()}
         </View>
@@ -77,7 +106,6 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -102,48 +130,44 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
   },
-  header: {
+  // Prepínač Live / History
+  modeToggle: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    marginBottom: 10,
-  },
-  headerCompact: {
-    paddingHorizontal: 12,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  liveIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: colors.surfaceLight,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 12,
   },
-  liveDotPulse: {
+  modeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  modeButtonActive: {
+    backgroundColor: colors.surface,
+  },
+  modeButtonText: {
+    color: colors.textSecondary,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  modeButtonTextActive: {
+    color: colors.textPrimary,
+  },
+  liveDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.textSecondary,
     marginRight: 6,
   },
-  liveCount: {
-    color: colors.accent,
-    fontWeight: 'bold',
-    fontSize: 12,
+  liveDotActive: {
+    backgroundColor: colors.accent,
   },
+  // Ostatné štýly
   listContent: {
     paddingHorizontal: 6,
     paddingBottom: 48,
@@ -173,4 +197,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-

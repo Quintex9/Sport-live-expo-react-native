@@ -5,14 +5,13 @@ import { colors } from '../theme/colors';
 import { Link } from 'expo-router';
 
 // Komponent pre zobrazenie jedného zápasu
-export const MatchCard = ({ match }: { match: Match }) => {
+export const MatchCard = ({ match, source }: { match: Match; source?: string }) => {
   const { teams, goals, fixture } = match;
   
   const statusShort = fixture?.status?.short ?? "NS";
   const elapsed = fixture?.status?.elapsed ?? 0;
 
   const isLive = statusShort !== "FT" && statusShort !== "NS";
-
 
   // Helper komponent pre logo tímu (rieši aj chýbajúce logo)
   const Logo = ({ uri, name }: { uri?: string; name?: string }) => (
@@ -25,8 +24,11 @@ export const MatchCard = ({ match }: { match: Match }) => {
     </View>
   );
 
+  // Link s parametrom source pre rozlíšenie live/history
+  const href = source ? `/match/${fixture?.id}?source=${source}` : `/match/${fixture?.id}`;
+
   return (
-    <Link href={`/match/${fixture?.id}`} style={styles.link} asChild>
+    <Link href={href as any} style={styles.link} asChild>
         <TouchableOpacity style={styles.wrap}>
           <View style={styles.card}>
             {/* Hlavička: Čas alebo Live indikátor */}

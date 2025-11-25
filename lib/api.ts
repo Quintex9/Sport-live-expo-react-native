@@ -1,6 +1,6 @@
 import Constants from "expo-constants";
-import { normalizeMatch } from "../src/utils/normalizeMatch";
-
+import { normalizeMatch, normalizeSupabaseMatch } from "../src/utils/normalizeMatch";
+import {SupabaseClient} from "../lib/supabase"
 // Načítanie API kľúča z konfigurácie (env premenné)
 const API_KEY = Constants.expoConfig?.extra?.APISPORTS_KEY;
 
@@ -40,8 +40,10 @@ function scoreOrder(status: string) {
 
 
 
+
 // Funkcia na získanie živých zápasov podľa športu
 export async function getLiveMatches(sport: string) {
+
   const url = LIVE_API[sport];
 
   if (!url) {
@@ -67,6 +69,51 @@ export async function getLiveMatches(sport: string) {
   const response = data.response ?? [];
 
   return response.map(normalizeMatch).sort((a: any, b: any) => scoreOrder(a.fixture.status.short) - scoreOrder(b.fixture.status.short));
+}
+
+export async function getMatches() {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const { data, error } = await SupabaseClient
+    .from('fixtures')
+    .select('*, home_team:teams!home_team_id(id,name,logo), away_team:teams!away_team_id(id,name,logo)')
+    .gte('date', sevenDaysAgo.toISOString())
+    .lte('date', new Date().toISOString())
+    .in('status_short', ['FT', 'NS', 'PST', 'CANC'])
+    .order('date', { ascending: false })
+    .limit(20);
+  return error ? [] : (data || []).map(normalizeSupabaseMatch);
+}
+
+// Načítanie detailu zápasu - všetko z API
+export async function getMatchDetail(fixtureId: string) {
+  const headers = { "x-apisports-key": API_KEY, "x-rapidapi-host": "v3.football.api-sports.io" };
+  
+  // Načítame všetky dáta o zápase paralelne
+  const [fixtureRes, eventsRes, statsRes, lineupsRes] = await Promise.all([
+    fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, { headers }).then(r => r.json()).catch(() => ({ response: [] })),
+    fetch(`https://v3.football.api-sports.io/fixtures/events?fixture=${fixtureId}`, { headers }).then(r => r.json()).catch(() => ({ response: [] })),
+    fetch(`https://v3.football.api-sports.io/fixtures/statistics?fixture=${fixtureId}`, { headers }).then(r => r.json()).catch(() => ({ response: [] })),
+    fetch(`https://v3.football.api-sports.io/fixtures/lineups?fixture=${fixtureId}`, { headers }).then(r => r.json()).catch(() => ({ response: [] })),
+  ]);
+
+  console.log("MATCH DETAIL - Events:", eventsRes.response?.length || 0, "Stats:", statsRes.response?.length || 0);
+
+  const fixture = fixtureRes.response?.[0];
+  if (!fixture) return null;
+
+  // H2H
+  const h2hRes = await fetch(
+    `https://v3.football.api-sports.io/fixtures/headtohead?h2h=${fixture.teams.home.id}-${fixture.teams.away.id}&last=5`,
+    { headers }
+  ).then(r => r.json()).catch(() => ({ response: [] }));
+
+  return {
+    ...fixture,
+    events: eventsRes.response || [],
+    statistics: statsRes.response || [],
+    lineups: lineupsRes.response || [],
+    h2h: (h2hRes.response || []).slice(0, 5),
+  };
 }
 
 /* -------------------------------------------

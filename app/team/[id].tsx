@@ -1,4 +1,4 @@
-import { useLocalSearchParams, Stack } from "expo-router";
+import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
     View,
@@ -6,6 +6,7 @@ import {
     ActivityIndicator,
     ScrollView,
     StyleSheet,
+    TouchableOpacity,
 } from "react-native";
 import { colors } from "../../src/theme/colors";
 
@@ -21,6 +22,7 @@ import TeamStandings from "../../src/components/TeamStandings";
 import TeamHeader from "../../src/components/TeamHeader";
 
 export default function TeamDetail() {
+    const router = useRouter();
     const { id, league, season } = useLocalSearchParams();
 
     const [header, setHeader] = useState<any>(null);
@@ -82,18 +84,25 @@ export default function TeamDetail() {
                 }}
             />
 
-            <ScrollView style={styles.container}>
-                {/* TEAM HEADER */}
-                <TeamHeader team={header.team} />
+            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+                <View style={styles.contentWrapper}>
+                    {/* TLAČÍTKO SPÄŤ */}
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                        <Text style={styles.backButtonText}>← Späť</Text>
+                    </TouchableOpacity>
 
-                {/*  STATISTICS */}
-                <TeamStatistics stats={stats} />
+                    {/* TEAM HEADER */}
+                    <TeamHeader team={header.team} />
 
-                {/* PLAYERS */}
-                <TeamPlayers players={players} />
+                    {/*  STATISTICS */}
+                    <TeamStatistics stats={stats} />
 
-                {/*  STANDINGS */}
-                <TeamStandings standing={standing} />
+                    {/* PLAYERS */}
+                    <TeamPlayers players={players} />
+
+                    {/*  STANDINGS */}
+                    <TeamStandings standing={standing} />
+                </View>
             </ScrollView>
         </>
     );
@@ -102,12 +111,27 @@ export default function TeamDetail() {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: colors.background,
+    },
+    scrollContent: {
+        alignItems: "center",
         padding: 20,
+    },
+    contentWrapper: {
+        width: "100%",
+        maxWidth: 600,
     },
     center: {
         flex: 1,
         backgroundColor: colors.background,
         justifyContent: "center",
         alignItems: "center",
+    },
+    backButton: {
+        paddingVertical: 8,
+        marginBottom: 8,
+    },
+    backButtonText: {
+        color: colors.textSecondary,
+        fontSize: 14,
     },
 });

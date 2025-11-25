@@ -1,7 +1,12 @@
 export function normalizeMatch(m: any) {
 
-  // FUTBAL
-  if (m.fixture) return m;
+  // FUTBAL - zachovaj aj eventy ak existujú
+  if (m.fixture) {
+    return {
+      ...m,
+      events: m.events || [],
+    };
+  }
 
   // SKÓRE – extrakcia podľa športu
   let homeScore = 0;
@@ -60,3 +65,14 @@ export function normalizeMatch(m: any) {
     league: m.league ?? {}
   };
 }
+
+// Normalizácia Supabase záznamu na rovnaký formát
+export const normalizeSupabaseMatch = (m: any) => ({
+  fixture: { id: m.id, date: m.date, status: { elapsed: 0, long: m.status_long ?? "", short: m.status_short ?? "NS" }, venue: { name: "", city: "" }, referee: "" },
+  teams: {
+    home: { id: m.home_team_id, name: m.home_team?.name ?? `Tím ${m.home_team_id}`, logo: m.home_team?.logo },
+    away: { id: m.away_team_id, name: m.away_team?.name ?? `Tím ${m.away_team_id}`, logo: m.away_team?.logo },
+  },
+  goals: { home: m.goals_home ?? 0, away: m.goals_away ?? 0 },
+  league: { id: m.league_id, name: "", season: m.season, round: m.round }
+});
