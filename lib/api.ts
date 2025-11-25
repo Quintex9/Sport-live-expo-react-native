@@ -68,3 +68,79 @@ export async function getLiveMatches(sport: string) {
 
   return response.map(normalizeMatch).sort((a: any, b: any) => scoreOrder(a.fixture.status.short) - scoreOrder(b.fixture.status.short));
 }
+
+/* -------------------------------------------
+   FUTBAL – DETAILY TÍMU (HEADER)
+-------------------------------------------- */
+
+export async function getTeamHeader(teamId: string) {
+  const res = await fetch(
+    `https://v3.football.api-sports.io/teams?id=${teamId}`,
+    {
+      headers: {
+        "x-apisports-key": API_KEY,
+        "x-rapidapi-host": "v3.football.api-sports.io",
+      },
+    }
+  );
+
+  const data = await res.json();
+  return data.response?.[0] ?? null;
+}
+
+/* -------------------------------------------
+   FUTBAL – ŠTATISTIKY TÍMU
+-------------------------------------------- */
+export async function getTeamStatistics(teamId: string, league: string, season: string) {
+  const res = await fetch(
+    `https://v3.football.api-sports.io/teams/statistics?team=${teamId}&league=${league}&season=${season}`,
+    {
+      headers: {
+        "x-apisports-key": API_KEY,
+        "x-rapidapi-host": "v3.football.api-sports.io",
+      },
+    }
+  );
+
+  const data = await res.json();
+  return data.response ?? null;
+}
+
+/* -------------------------------------------
+   FUTBAL – HRÁČI TÍMU
+-------------------------------------------- */
+export async function getTeamPlayers(teamId: string, season: string) {
+  const res = await fetch(
+    `https://v3.football.api-sports.io/players?team=${teamId}&season=${season}`,
+    {
+      headers: {
+        "x-apisports-key": API_KEY,
+        "x-rapidapi-host": "v3.football.api-sports.io",
+      },
+    }
+  );
+
+  const data = await res.json();
+  return data.response ?? [];
+}
+
+/* -------------------------------------------
+   FUTBAL – TABUĽKA LIGY
+-------------------------------------------- */
+export async function getStandings(league: string, season: string) {
+  const res = await fetch(
+    `https://v3.football.api-sports.io/standings?league=${league}&season=${season}`,
+    {
+      headers: {
+        "x-apisports-key": API_KEY,
+        "x-rapidapi-host": "v3.football.api-sports.io",
+      },
+    }
+  );
+
+  const data = await res.json();
+
+  // vracia pole standings pre všetky tímy
+  return data.response?.[0]?.league?.standings?.[0] ?? [];
+}
+
