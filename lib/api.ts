@@ -64,7 +64,6 @@ export async function getLiveMatches(sport: string) {
   }
 
   const data = await res.json();
-  console.log("LIVE DATA:", data); // Debug výpis
   // Vráti pole zápasov (response) alebo prázdne pole
   const response = data.response ?? [];
 
@@ -72,16 +71,39 @@ export async function getLiveMatches(sport: string) {
 }
 
 export async function getMatches() {
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const twoDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+  const nowISO = now.toISOString();
+  
+  // Live statusy ktoré nechceme v zozname
+  const liveStatuses = ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE'];
+  
   const { data, error } = await SupabaseClient
     .from('fixtures')
     .select('*, home_team:teams!home_team_id(id,name,logo), away_team:teams!away_team_id(id,name,logo)')
-    .gte('date', sevenDaysAgo.toISOString())
-    .lte('date', new Date().toISOString())
-    .in('status_short', ['FT', 'NS', 'PST', 'CANC'])
-    .order('date', { ascending: false })
-    .limit(20);
-  return error ? [] : (data || []).map(normalizeSupabaseMatch);
+    .gte('date', twoDaysAgo)
+    .lt('date', todayEnd)
+    .order('date', { ascending: true })
+    .limit(50);
+  
+  
+  if (error) return [];
+  
+  // Filter: všetko okrem live zápasov, NS len ak ešte nezačal
+  const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString();
+  
+  const filtered = (data || []).filter((m: any) => {
+    // Live statusy - nikdy nezobrazuj
+    if (liveStatuses.includes(m.status_short)) return false;
+    // NS ktoré už mali začať - nezobrazuj (pravdepodobne live)
+    if (m.status_short === 'NS' && m.date <= nowISO) return false;
+    // Zápas starší ako 3h bez FT statusu - pravdepodobne skončil ale DB sa neaktualizovala
+    if (m.status_short !== 'FT' && m.date < threeHoursAgo) return false;
+    return true;
+  });
+  
+  return filtered.map(normalizeSupabaseMatch);
 }
 
 // Načítanie detailu zápasu - všetko z API
@@ -96,7 +118,6 @@ export async function getMatchDetail(fixtureId: string) {
     fetch(`https://v3.football.api-sports.io/fixtures/lineups?fixture=${fixtureId}`, { headers }).then(r => r.json()).catch(() => ({ response: [] })),
   ]);
 
-  console.log("MATCH DETAIL - Events:", eventsRes.response?.length || 0, "Stats:", statsRes.response?.length || 0);
 
   const fixture = fixtureRes.response?.[0];
   if (!fixture) return null;

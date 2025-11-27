@@ -21,9 +21,12 @@ const SPORT_TITLES: Record<SportType, string> = {
 interface HeaderProps {
     sport: SportType;
     count: number;
+    mode?: 'live' | 'history';
 }
 
-export const Header = ({ sport, count }: HeaderProps) => {
+export const Header = ({ sport, count, mode = 'live' }: HeaderProps) => {
+  const isLive = mode === 'live';
+  
   return (
     <View style={styles.header}>
       <View>
@@ -31,9 +34,11 @@ export const Header = ({ sport, count }: HeaderProps) => {
         <Text style={styles.headerSubtitle}>{SPORT_TITLES[sport]}</Text>
       </View>
 
-      <View style={styles.liveIndicator}>
-        <View style={styles.liveDotPulse} />
-        <Text style={styles.liveCount}>{count} Live</Text>
+      <View style={[styles.liveIndicator, !isLive && styles.historyIndicator]}>
+        {isLive && <View style={styles.liveDotPulse} />}
+        <Text style={[styles.liveCount, !isLive && styles.historyCount]}>
+          {count} {isLive ? 'Live' : 'Zápasov'}
+        </Text>
       </View>
     </View>
   );
@@ -78,5 +83,11 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontWeight: "bold",
     fontSize: 12,
+  },
+  historyIndicator: {
+    backgroundColor: colors.surface,
+  },
+  historyCount: {
+    color: colors.textSecondary,
   },
 });
