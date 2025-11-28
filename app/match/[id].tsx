@@ -1,4 +1,4 @@
-import { useLocalSearchParams, Stack, Link, useRouter } from "expo-router";
+import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import { View, Text, ActivityIndicator, StyleSheet, Image, ScrollView, TouchableOpacity } from "react-native";
 import { useLiveMatches } from "../../src/hooks/useLiveMatches";
 import { useMatchDetail } from "../../src/hooks/useMatchDetail";
@@ -18,15 +18,10 @@ export default function MatchDetail() {
   const { match: detailMatch, loading: detailLoading } = useMatchDetail(fixtureId);
 
   // Pre live zápasy kombinujeme live dáta (aktuálne skóre) s detailmi
-  // Eventy - preferujeme z detailu, ak nie sú tak z live matchu
-  const liveEvents = liveMatch?.events || [];
-  const detailEvents = detailMatch?.events || [];
-  const combinedEvents = detailEvents.length > 0 ? detailEvents : liveEvents;
-  
   const match = liveMatch ? { 
     ...detailMatch, 
     ...liveMatch, 
-    events: combinedEvents, 
+    events: detailMatch?.events?.length ? detailMatch.events : (liveMatch?.events || []), 
     statistics: detailMatch?.statistics || [], 
     lineups: detailMatch?.lineups || [], 
     h2h: detailMatch?.h2h || [] 
@@ -70,19 +65,12 @@ export default function MatchDetail() {
   // Live špecifické dáta
   const halftimeScore = match.score?.halftime;
   const statusLong = fixture.status?.long || '';
-  const elapsed = fixture.status?.elapsed || 0;
   
-  // Určenie fázy zápasu
-  const getMatchPhase = () => {
-    const short = fixture.status?.short;
-    if (short === '1H') return '1. polčas';
-    if (short === 'HT') return 'Polčas';
-    if (short === '2H') return '2. polčas';
-    if (short === 'ET') return 'Predĺženie';
-    if (short === 'P') return 'Penalty';
-    if (short === 'BT') return 'Prestávka';
-    return statusLong;
-  };
+  // Mapovanie fáz zápasu a názvov štatistík
+  const PHASES: Record<string, string> = { '1H': '1. polčas', 'HT': 'Polčas', '2H': '2. polčas', 'ET': 'Predĺženie', 'P': 'Penalty', 'BT': 'Prestávka' };
+  const STAT_NAMES: Record<string, string> = { 'Ball Possession': 'Držanie lopty', 'Total Shots': 'Strely', 'Shots on Goal': 'Na bránu', 'Corner Kicks': 'Rohy', 'Fouls': 'Fauly', 'Offsides': 'Ofsajdy', 'Yellow Cards': 'Žlté karty', 'Passes %': 'Prihrávky %' };
+  const getIcon = (e: any) => e.type === 'Goal' ? '⚽' : e.type === 'Card' ? (e.detail === 'Red Card' ? '🟥' : '🟨') : e.type === 'subst' ? '🔄' : '•';
+  const matchPhase = PHASES[fixture.status?.short] || statusLong;
 
   // Štatistiky zápasu
   const homeStats = statistics.find((s: any) => s.team?.id === teams?.home?.id)?.statistics || [];
@@ -145,7 +133,7 @@ export default function MatchDetail() {
               <View style={styles.liveIndicator} />
               <Text style={styles.liveTrackerTitle}>LIVE TRACKER</Text>
               <View style={styles.livePhase}>
-                <Text style={styles.livePhaseText}>{getMatchPhase()}</Text>
+                <Text style={styles.livePhaseText}>{matchPhase}</Text>
               </View>
             </View>
 
@@ -175,9 +163,9 @@ export default function MatchDetail() {
                 {events.filter((e: any) => e.type === 'Goal' || e.type === 'Card').slice(-8).map((e: any, i: number) => {
                   const position = Math.min((e.time?.elapsed || 0) / 90 * 100, 100);
                   const isHome = e.team?.id === teams?.home?.id;
-                  const icon = e.type === 'Goal' ? '⚽' : e.detail === 'Red Card' ? '🟥' : '🟨';
+                  const icon = e.type === 'Goal' ? '⚽' : (e.detail === 'Red Card' ? '🟥' : '🟨');
                   return (
-                    <View key={i} style={[styles.timelineEvent, { left: `${position}%` }, isHome ? styles.timelineEventHome : styles.timelineEventAway]}>
+                    <View key={i} style={[styles.timelineEvent, { left: `${position}%` }]}>
                       <Text style={styles.timelineEventIcon}>{icon}</Text>
                     </View>
                   );
@@ -194,11 +182,10 @@ export default function MatchDetail() {
               ) : events.length > 0 ? (
                 events.slice(-3).reverse().map((e: any, i: number) => {
                   const isHome = e.team?.id === teams?.home?.id;
-                  const icon = e.type === 'Goal' ? '⚽' : e.type === 'Card' ? (e.detail === 'Red Card' ? '🟥' : '🟨') : e.type === 'subst' ? '🔄' : '•';
                   return (
                     <View key={i} style={styles.recentEvent}>
                       <Text style={styles.recentEventTime}>{e.time?.elapsed}'</Text>
-                      <Text style={styles.recentEventIcon}>{icon}</Text>
+                      <Text style={styles.recentEventIcon}>{getIcon(e)}</Text>
                       <Text style={styles.recentEventText} numberOfLines={1}>
                         {e.player?.name} {e.type === 'Goal' && e.assist?.name ? `(${e.assist.name})` : ''}
                       </Text>
@@ -245,18 +232,17 @@ export default function MatchDetail() {
           </View>
         )}
 
-        {/* EVENTY ZÁPASU */}
-        {events.length > 0 && (
+        {/* EVENTY ZÁPASU - len pre ukončené zápasy */}
+        {isFinished && events.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Priebeh zápasu</Text>
             {events.slice(0, 15).map((e: any, i: number) => {
               const isHome = e.team?.id === teams?.home?.id;
-              const icon = e.type === 'Goal' ? '⚽' : e.type === 'Card' ? (e.detail === 'Red Card' ? '🟥' : '🟨') : e.type === 'subst' ? '🔄' : '•';
               return (
                 <View key={i} style={[styles.eventRow, isHome ? styles.eventLeft : styles.eventRight]}>
                   {isHome && <Text style={styles.eventText}>{e.player?.name} <Text style={styles.eventDetail}>{e.detail}</Text></Text>}
                   <View style={styles.eventBadge}>
-                    <Text style={styles.eventIcon}>{icon}</Text>
+                    <Text style={styles.eventIcon}>{getIcon(e)}</Text>
                     <Text style={styles.eventTime}>{e.time?.elapsed}'</Text>
                   </View>
                   {!isHome && <Text style={styles.eventText}>{e.player?.name} <Text style={styles.eventDetail}>{e.detail}</Text></Text>}
@@ -280,7 +266,7 @@ export default function MatchDetail() {
                 <View key={type} style={styles.statRow}>
                   <Text style={styles.statValue}>{home}</Text>
                   <View style={styles.statCenter}>
-                    <Text style={styles.statLabel}>{type.replace('Ball Possession', 'Držanie lopty').replace('Total Shots', 'Strely').replace('Shots on Goal', 'Na bránu').replace('Corner Kicks', 'Rohy').replace('Fouls', 'Fauly').replace('Offsides', 'Ofsajdy').replace('Yellow Cards', 'Žlté karty').replace('Passes %', 'Prihrávky %')}</Text>
+                    <Text style={styles.statLabel}>{STAT_NAMES[type] || type}</Text>
                     <View style={styles.statBarBg}>
                       <View style={[styles.statBarHome, { width: `${(homeNum / total) * 100}%` }]} />
                     </View>
@@ -447,8 +433,6 @@ const styles = StyleSheet.create({
   timelineMin: { color: colors.textSecondary, fontSize: 9 },
   timelineEvents: { position: "absolute", top: 0, left: 0, right: 0, height: 6 },
   timelineEvent: { position: "absolute", top: -8, marginLeft: -10 },
-  timelineEventHome: {},
-  timelineEventAway: {},
   timelineEventIcon: { fontSize: 14 },
   recentEvents: { borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.1)", paddingTop: 12 },
   recentEvent: { flexDirection: "row", alignItems: "center", paddingVertical: 6 },

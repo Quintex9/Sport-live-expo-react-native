@@ -9,12 +9,18 @@ import { colors } from '../src/theme/colors';
 import { SportButtons } from '../src/components/SportButtons';
 import { Header } from '../src/components/Header';
 
+// Globálny stav pre zachovanie módu pri navigácii
+let savedMode: 'live' | 'history' = 'live';
+let savedSport: 'football' | 'basketball' | 'baseball' | 'nfl' | 'hockey' | 'handball' = 'football';
+
 export default function App() {
   // State pre zistenie aktuálneho športu
-  const [sport, setSport] = useState<'football' | 'basketball' | 'baseball' | 'nfl' | 'hockey' | 'handball'>('football');
+  const [sport, setSportState] = useState(savedSport);
+  const setSport = (s: typeof sport) => { savedSport = s; setSportState(s); };
   
   // State pre prepínanie medzi Live a History
-  const [mode, setMode] = useState<'live' | 'history'>('live');
+  const [mode, setModeState] = useState(savedMode);
+  const setMode = (m: typeof mode) => { savedMode = m; setModeState(m); };
 
   // Načítanie dát z hookov
   const liveData = useLiveMatches(sport);
@@ -72,7 +78,7 @@ export default function App() {
         <View style={[styles.shell, isCompact && styles.shellCompact]}>
 
           {/* Hlavička aplikácie */}
-          <Header sport={sport} count={data.length}></Header>
+          <Header sport={sport} count={data.length} mode={mode} />
 
           {/* Prepínač Live / Zápasy */}
           <View style={styles.modeToggle}>
