@@ -95,9 +95,6 @@ export default function App() {
             </TouchableOpacity>
           </View>
 
-          {/* Športové menu - zobraz len pre Live mód */}
-          {mode === 'live' && <SportButtons sport={sport} onChange={setSport} />}
-
           {renderContent()}
         </View>
       </SafeAreaView>
