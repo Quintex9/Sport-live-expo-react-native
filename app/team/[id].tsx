@@ -8,6 +8,7 @@ import {
     StyleSheet,
     TouchableOpacity,
 } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "../../src/theme/colors";
 
 import {
@@ -16,6 +17,7 @@ import {
     getTeamPlayers,
     getStandings,
 } from "../../lib/api";
+
 import TeamPlayers from "../../src/components/TeamPlayers";
 import TeamStatistics from "../../src/components/Teamstatistics";
 import TeamStandings from "../../src/components/TeamStandings";
@@ -60,51 +62,57 @@ export default function TeamDetail() {
 
     if (loading) {
         return (
-            <View style={styles.center}>
-                <ActivityIndicator size="large" color={colors.accent} />
-            </View>
+            <SafeAreaProvider>
+                <SafeAreaView style={styles.center}>
+                    <ActivityIndicator size="large" color={colors.accent} />
+                </SafeAreaView>
+            </SafeAreaProvider>
         );
     }
 
     if (!header) {
         return (
-            <View style={styles.center}>
-                <Text style={{ color: "#fff" }}>Tím sa nenašiel.</Text>
-            </View>
+            <SafeAreaProvider>
+                <SafeAreaView style={styles.center}>
+                    <Text style={{ color: "#fff" }}>Tím sa nenašiel.</Text>
+                </SafeAreaView>
+            </SafeAreaProvider>
         );
     }
 
     return (
-        <>
-            <Stack.Screen
-                options={{
-                    title: header.team.name,
-                    headerTintColor: "#fff",
-                    headerStyle: { backgroundColor: colors.background },
-                }}
-            />
+        <SafeAreaProvider>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+                <Stack.Screen
+                    options={{
+                        title: header.team.name,
+                        headerTintColor: "#fff",
+                        headerStyle: { backgroundColor: colors.background },
+                    }}
+                />
 
-            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-                <View style={styles.contentWrapper}>
-                    {/* TLAČÍTKO SPÄŤ */}
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <Text style={styles.backButtonText}>← Späť</Text>
-                    </TouchableOpacity>
+                <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+                    <View style={styles.contentWrapper}>
+                        {/* SPÄŤ */}
+                        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                            <Text style={styles.backButtonText}>← Späť</Text>
+                        </TouchableOpacity>
 
-                    {/* TEAM HEADER */}
-                    <TeamHeader team={header.team} />
+                        {/* HLAVIČKA TÍMU */}
+                        <TeamHeader team={header.team} />
 
-                    {/*  STATISTICS */}
-                    <TeamStatistics stats={stats} />
+                        {/* ŠTATISTIKY */}
+                        <TeamStatistics stats={stats} />
 
-                    {/* PLAYERS */}
-                    <TeamPlayers players={players} />
+                        {/* HRÁČI */}
+                        <TeamPlayers players={players} />
 
-                    {/*  STANDINGS */}
-                    <TeamStandings standing={standing} />
-                </View>
-            </ScrollView>
-        </>
+                        {/* TABUĽKA */}
+                        <TeamStandings standing={standing} />
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
+        </SafeAreaProvider>
     );
 }
 

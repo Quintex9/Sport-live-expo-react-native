@@ -35,7 +35,7 @@ export default function Register() {
       <View style={styles.inner}>
 
         <Text style={styles.title}>Registrácia</Text>
-        <Text style={styles.subtitle}>Vytvor si účet 🚀</Text>
+        <Text style={styles.subtitle}>Vytvor si účet </Text>
 
         {/* EMAIL */}
         <Text style={styles.label}>Email</Text>

@@ -1,13 +1,25 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, FlatList, ActivityIndicator, useWindowDimensions, TouchableOpacity } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  ActivityIndicator,
+  useWindowDimensions,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useLiveMatches } from '../src/hooks/useLiveMatches';
 import { useMatches } from '../src/hooks/useMatches';
 import { MatchCard } from '../src/components/MatchCard';
 import { colors } from '../src/theme/colors';
-import { SportButtons } from '../src/components/SportButtons';
 import { Header } from '../src/components/Header';
+import { LeagueSelector } from '../src/components/LeagueSelector';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 // Globálny stav pre zachovanie módu pri navigácii
 let savedMode: 'live' | 'history' = 'live';
@@ -17,7 +29,7 @@ export default function App() {
   // State pre zistenie aktuálneho športu
   const [sport, setSportState] = useState(savedSport);
   const setSport = (s: typeof sport) => { savedSport = s; setSportState(s); };
-  
+
   // State pre prepínanie medzi Live a History
   const [mode, setModeState] = useState(savedMode);
   const setMode = (m: typeof mode) => { savedMode = m; setModeState(m); };
@@ -25,17 +37,34 @@ export default function App() {
   // Načítanie dát z hookov
   const liveData = useLiveMatches(sport);
   const historyData = useMatches();
-
-  // Vyber aktívne dáta podľa módu
   const activeData = mode === 'live' ? liveData : historyData;
   const { data, loading, refreshing, onRefresh } = activeData;
 
-  // Responzívny layout (1 stĺpec pre mobil, 2 pre tablet/desktop)
+  // State pre rozbalenie lig
+  const [leaguesExpanded, setLeaguesExpanded] = useState(false);
+  const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
+
+  // Extrahovanie unikátnych lig z dát
+  const leagues: any[] = [];
+  const leagueMap = new Map();
+  data.forEach((m: any) => {
+    const id = m.league?.id;
+    if (id && !leagueMap.has(id)) {
+      leagueMap.set(id, true);
+      leagues.push(m.league);
+    }
+  });
+
+  // Filtrovanie dát podľa vybranej ligy
+  const filteredData = selectedLeague
+    ? data.filter((m: any) => String(m.league?.id) === selectedLeague)
+    : data;
+
+  // Responzívny layout
   const { width } = useWindowDimensions();
   const isCompact = width < 640;
   const numColumns = isCompact ? 1 : 2;
 
-  // Renderovanie obsahu podľa stavu (loading / data)
   const renderContent = () => {
     if (loading && !refreshing) {
       return (
@@ -48,10 +77,12 @@ export default function App() {
 
     return (
       <FlatList
-        key={`${mode}-${numColumns}`} // Zmena kľúča vynúti re-render pri zmene layoutu alebo módu
-        data={data}
+        key={`${mode}-${numColumns}`}
+        data={filteredData}
         keyExtractor={(item) => String(item.fixture?.id ?? item.id)}
-        renderItem={({ item }) => <MatchCard match={item} source={mode === 'history' ? 'history' : undefined} />}
+        renderItem={({ item }) => (
+          <MatchCard match={item} source={mode === 'history' ? 'history' : undefined} />
+        )}
         numColumns={numColumns}
         contentContainerStyle={[styles.listContent, isCompact && styles.listContentCompact]}
         columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
@@ -74,11 +105,11 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <StatusBar style="light" backgroundColor={colors.background} />
-        {/* Shell obmedzuje maximálnu šírku na veľkých obrazovkách */}
+
         <View style={[styles.shell, isCompact && styles.shellCompact]}>
 
-          {/* Hlavička aplikácie */}
-          <Header sport={sport} count={data.length} mode={mode} />
+          {/* Hlavička */}
+          <Header sport={sport} count={filteredData.length} mode={mode} />
 
           {/* Prepínač Live / Zápasy */}
           <View style={styles.modeToggle}>
@@ -100,6 +131,14 @@ export default function App() {
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Dropdown / Výber lig */}
+          <LeagueSelector
+            leagues={leagues}
+            selectedLeague={selectedLeague}
+            onSelect={(id) => setSelectedLeague(id)}
+          />
+
 
           {renderContent()}
         </View>
@@ -133,7 +172,8 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
   },
-  // Prepínač Live / History
+
+  // Prepínač
   modeToggle: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceLight,
@@ -170,7 +210,8 @@ const styles = StyleSheet.create({
   liveDotActive: {
     backgroundColor: colors.accent,
   },
-  // Ostatné štýly
+
+  // Zápasy
   listContent: {
     paddingHorizontal: 6,
     paddingBottom: 48,

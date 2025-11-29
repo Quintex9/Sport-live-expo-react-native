@@ -8,6 +8,21 @@ interface TeamStatisticsProps {
 export default function TeamStatistics({ stats }: TeamStatisticsProps) {
   if (!stats) return null;
 
+  // PREPARE FORM ARRAY
+  const formArray = stats.form ? stats.form.split("") : [];
+
+  const getFormColor = (char: string) => {
+    switch (char) {
+      case "W":
+        return { color: "#4CAF50" }; // Zelená
+      case "L":
+        return { color: "#E53935" }; // Červená
+      case "D":
+      default:
+        return { color: "#fff" }; // Biela
+    }
+  };
+
   return (
     <View style={styles.card}>
       <Text style={styles.section}>📊 Štatistiky sezóny</Text>
@@ -16,12 +31,12 @@ export default function TeamStatistics({ stats }: TeamStatisticsProps) {
         <>
           <View style={styles.row}>
             <Text style={styles.label}>Strelené góly:</Text>
-            <Text style={styles.value}>{stats.goals.for.total.total}</Text>
+            <Text style={styles.valueS}>{stats.goals.for.total.total}</Text>
           </View>
 
           <View style={styles.row}>
             <Text style={styles.label}>Inkasované góly:</Text>
-            <Text style={styles.value}>{stats.goals.against.total.total}</Text>
+            <Text style={styles.valueI}>{stats.goals.against.total.total}</Text>
           </View>
         </>
       ) : (
@@ -37,7 +52,14 @@ export default function TeamStatistics({ stats }: TeamStatisticsProps) {
 
       <View style={styles.row}>
         <Text style={styles.label}>Forma:</Text>
-        <Text style={styles.value}>{stats.form ?? "-"}</Text>
+
+        <View style={styles.formWrapper}>
+          {formArray.map((char: string, index: number) => (
+            <Text key={index} style={[styles.formChar, getFormColor(char)]}>
+              {char}
+            </Text>
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -61,12 +83,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 8,
+    alignItems: "center",
   },
   label: {
     color: colors.textSecondary,
   },
+  valueS: {
+    color: "#4CAF50",
+    fontWeight: "600",
+  },
+  valueI: {
+    color: "#E53935",
+    fontWeight: "600",
+  },
   value: {
     color: "#fff",
     fontWeight: "600",
+  },
+  formWrapper: {
+    flexDirection: "row",
+    gap: 3,
+  },
+  formChar: {
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

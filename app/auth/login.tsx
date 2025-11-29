@@ -34,7 +34,6 @@ export default function Login() {
       <View style={styles.inner}>
 
         <Text style={styles.title}>Prihlásenie</Text>
-        <Text style={styles.subtitle}>Vitaj späť 👋</Text>
 
         {/* EMAIL */}
         <Text style={styles.label}>Email</Text>
