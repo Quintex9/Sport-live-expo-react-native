@@ -40,10 +40,10 @@ export const MatchCard = ({ match, source }: { match: Match; source?: string }) 
                 </View>
               ) : (
                 <Text style={styles.time}>
-                  {new Date(fixture.date).toLocaleTimeString('sk-SK', {
+                  {fixture?.date ? new Date(fixture.date).toLocaleTimeString('sk-SK', {
                     hour: '2-digit',
                     minute: '2-digit',
-                  })}
+                  }) : '-'}
                 </Text>
               )}
             </View>

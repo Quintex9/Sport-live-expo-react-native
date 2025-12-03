@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,8 +7,6 @@ import {
   ActivityIndicator,
   useWindowDimensions,
   TouchableOpacity,
-  ScrollView,
-  Dimensions
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -18,8 +16,6 @@ import { MatchCard } from '../src/components/MatchCard';
 import { colors } from '../src/theme/colors';
 import { Header } from '../src/components/Header';
 import { LeagueSelector } from '../src/components/LeagueSelector';
-
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 // Globálny stav pre zachovanie módu pri navigácii
 let savedMode: 'live' | 'history' = 'live';
@@ -33,14 +29,17 @@ export default function App() {
   const liveData = useLiveMatches("football");
   const historyData = useMatches();
   const activeData = mode === 'live' ? liveData : historyData;
-  const { data, loading, refreshing, onRefresh } = activeData;
+  const { data, loading, refreshing, onRefresh, error } = activeData;
+
+  // Debug info
+  console.log(`[${mode}] Data:`, data?.length || 0, 'Loading:', loading, 'Error:', error);
 
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
 
   // Extrahovanie unikátnych lig z dát
   const leagues: any[] = [];
   const leagueMap = new Map();
-  data.forEach((m: any) => {
+  (data || []).forEach((m: any) => {
     const id = m.league?.id;
     if (id && !leagueMap.has(id)) {
       leagueMap.set(id, true);
@@ -50,8 +49,8 @@ export default function App() {
 
   // Filtrovanie dát podľa vybranej ligy
   const filteredData = selectedLeague
-    ? data.filter((m: any) => String(m.league?.id) === selectedLeague)
-    : data;
+    ? (data || []).filter((m: any) => String(m.league?.id) === selectedLeague)
+    : (data || []);
 
   // Responzívny layout
   const { width } = useWindowDimensions();
@@ -87,6 +86,11 @@ export default function App() {
             <Text style={styles.emptyText}>
               {mode === 'live' ? 'Žiadne živé zápasy' : 'Žiadne zápasy'}
             </Text>
+            {error && (
+              <Text style={[styles.emptySubText, { color: colors.live, marginTop: 8 }]}>
+                Chyba: {error}
+              </Text>
+            )}
             <Text style={styles.emptySubText}>Skúste potiahnuť pre obnovenie</Text>
           </View>
         }

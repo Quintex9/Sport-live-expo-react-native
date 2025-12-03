@@ -43,7 +43,7 @@ function scoreOrder(status: string) {
 
 // Funkcia na získanie živých zápasov podľa športu
 export async function getLiveMatches(sport: string) {
-
+  console.log('getLiveMatches called for:', sport, 'API_KEY exists:', !!API_KEY);
   const url = LIVE_API[sport];
 
   if (!url) {
@@ -51,6 +51,10 @@ export async function getLiveMatches(sport: string) {
   }
 
   // Volanie API s hlavičkou pre autentifikáciu
+  if (!API_KEY) {
+    throw new Error("APISPORTS_KEY is missing! Check .env or app.config.js");
+  }
+
   const res = await fetch(url, {
     headers: {
       "x-apisports-key": API_KEY,
@@ -71,43 +75,55 @@ export async function getLiveMatches(sport: string) {
 }
 
 export async function getMatches() {
-  const now = new Date();
-  const twoDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString();
-  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
-  const nowISO = now.toISOString();
-  
-  // Live statusy ktoré nechceme v zozname
-  const liveStatuses = ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE'];
-  
-  const { data, error } = await SupabaseClient
-    .from('fixtures')
-    .select('*, home_team:teams!home_team_id(id,name,logo), away_team:teams!away_team_id(id,name,logo)')
-    .gte('date', twoDaysAgo)
-    .lt('date', todayEnd)
-    .order('date', { ascending: true })
-    .limit(50);
-  
-  
-  if (error) return [];
-  
-  // Filter: všetko okrem live zápasov, NS len ak ešte nezačal
-  const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString();
-  
-  const filtered = (data || []).filter((m: any) => {
-    // Live statusy - nikdy nezobrazuj
-    if (liveStatuses.includes(m.status_short)) return false;
-    // NS ktoré už mali začať - nezobrazuj (pravdepodobne live)
-    if (m.status_short === 'NS' && m.date <= nowISO) return false;
-    // Zápas starší ako 3h bez FT statusu - pravdepodobne skončil ale DB sa neaktualizovala
-    if (m.status_short !== 'FT' && m.date < threeHoursAgo) return false;
-    return true;
-  });
-  
-  return filtered.map(normalizeSupabaseMatch);
+  console.log('getMatches called, Supabase configured:', !!SupabaseClient);
+  try {
+    const now = new Date();
+    const twoDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString();
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+    const nowISO = now.toISOString();
+    
+    // Live statusy ktoré nechceme v zozname
+    const liveStatuses = ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE'];
+    
+    const { data, error } = await SupabaseClient
+      .from('fixtures')
+      .select('*, home_team:teams!home_team_id(id,name,logo), away_team:teams!away_team_id(id,name,logo)')
+      .gte('date', twoDaysAgo)
+      .lt('date', todayEnd)
+      .order('date', { ascending: true })
+      .limit(50);
+    
+    
+    if (error) return [];
+    
+    // Filter: všetko okrem live zápasov, NS len ak ešte nezačal
+    const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString();
+    
+    const filtered = (data || []).filter((m: any) => {
+      // Live statusy - nikdy nezobrazuj
+      if (liveStatuses.includes(m.status_short)) return false;
+      // NS ktoré už mali začať - nezobrazuj (pravdepodobne live)
+      if (m.status_short === 'NS' && m.date <= nowISO) return false;
+      // Zápas starší ako 3h bez FT statusu - pravdepodobne skončil ale DB sa neaktualizovala
+      if (m.status_short !== 'FT' && m.date < threeHoursAgo) return false;
+      return true;
+    });
+    
+    const result = filtered.map(normalizeSupabaseMatch);
+    console.log('getMatches returning:', result.length, 'matches');
+    return result;
+  } catch (e) {
+    // Ak Supabase nie je nakonfigurované, vráť prázdne pole
+    console.error('getMatches error:', e);
+    return [];
+  }
 }
 
 // Načítanie detailu zápasu - všetko z API
 export async function getMatchDetail(fixtureId: string) {
+  if (!API_KEY) {
+    throw new Error("APISPORTS_KEY is missing!");
+  }
   const headers = { "x-apisports-key": API_KEY, "x-rapidapi-host": "v3.football.api-sports.io" };
   
   // Načítame všetky dáta o zápase paralelne
@@ -142,6 +158,9 @@ export async function getMatchDetail(fixtureId: string) {
 -------------------------------------------- */
 
 export async function getTeamHeader(teamId: string) {
+  if (!API_KEY) {
+    throw new Error("APISPORTS_KEY is missing!");
+  }
   const res = await fetch(
     `https://v3.football.api-sports.io/teams?id=${teamId}`,
     {
@@ -160,6 +179,9 @@ export async function getTeamHeader(teamId: string) {
    FUTBAL – ŠTATISTIKY TÍMU
 -------------------------------------------- */
 export async function getTeamStatistics(teamId: string, league: string, season: string) {
+  if (!API_KEY) {
+    throw new Error("APISPORTS_KEY is missing!");
+  }
   const res = await fetch(
     `https://v3.football.api-sports.io/teams/statistics?team=${teamId}&league=${league}&season=${season}`,
     {
@@ -178,6 +200,9 @@ export async function getTeamStatistics(teamId: string, league: string, season: 
    FUTBAL – HRÁČI TÍMU
 -------------------------------------------- */
 export async function getTeamPlayers(teamId: string, season: string) {
+  if (!API_KEY) {
+    throw new Error("APISPORTS_KEY is missing!");
+  }
   const res = await fetch(
     `https://v3.football.api-sports.io/players?team=${teamId}&season=${season}`,
     {
@@ -196,6 +221,9 @@ export async function getTeamPlayers(teamId: string, season: string) {
    FUTBAL – TABUĽKA LIGY
 -------------------------------------------- */
 export async function getStandings(league: string, season: string) {
+  if (!API_KEY) {
+    throw new Error("APISPORTS_KEY is missing!");
+  }
   const res = await fetch(
     `https://v3.football.api-sports.io/standings?league=${league}&season=${season}`,
     {

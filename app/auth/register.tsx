@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { SupabaseClient } from "../../lib/supabase";
+import { colors } from "../../src/theme/colors";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -33,7 +34,7 @@ export default function Register() {
       behavior={Platform.select({ ios: "padding", android: undefined })}
     >
       <View style={styles.inner}>
-
+      <TouchableOpacity style={styles.button1} onPress={()=>router.push('/')}><Text style={styles.buttonText}>Späť</Text></TouchableOpacity>
         <Text style={styles.title}>Registrácia</Text>
         <Text style={styles.subtitle}>Vytvor si účet </Text>
 
@@ -42,7 +43,7 @@ export default function Register() {
         <TextInput
           style={styles.input}
           placeholder="zadaj email"
-          placeholderTextColor="#777"
+          placeholderTextColor={colors.textSecondary}
           onChangeText={setEmail}
           value={email}
         />
@@ -52,7 +53,7 @@ export default function Register() {
         <TextInput
           style={styles.input}
           placeholder="•••••••••"
-          placeholderTextColor="#777"
+          placeholderTextColor={colors.textSecondary}
           secureTextEntry
           onChangeText={setPassword}
           value={password}
@@ -77,93 +78,81 @@ export default function Register() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0B0B0E",
+    backgroundColor: colors.background,
   },
-
   inner: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: 20,
+    width: "100%",
+    maxWidth: 1024,
+    alignSelf: "center",
   },
-
   title: {
-    color: "#F5F5F7",
+    color: colors.textPrimary,
     fontSize: 38,
     fontWeight: "800",
     letterSpacing: 0.5,
     textAlign: "center",
     marginBottom: 6,
   },
-
   subtitle: {
-    color: "#8F9094",
+    color: colors.textSecondary,
     textAlign: "center",
     marginBottom: 40,
     fontSize: 16,
     letterSpacing: 0.2,
   },
-
   label: {
-    color: "#C1C1C3",
+    color: colors.textSecondary,
     fontSize: 15,
     marginBottom: 8,
     fontWeight: "500",
   },
-
   input: {
-    backgroundColor: "#111216",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: colors.border,
     paddingVertical: 18,
     paddingHorizontal: 20,
     borderRadius: 16,
-    color: "#F3F3F4",
+    color: colors.textPrimary,
     fontSize: 16,
     marginBottom: 22,
-
-    // veľmi jemný profesionálny tieň (takmer neviditeľný)
-    shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
   },
-
   button: {
-    backgroundColor: "#5B5AF5",
+    backgroundColor: colors.accent,
     paddingVertical: 18,
     borderRadius: 18,
     marginTop: 16,
-
-    // hladký hlboký glow (senior-level)
-    shadowColor: "#5B5AF5",
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
   },
-
+  button1: {
+    backgroundColor: colors.accent,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 20,
+    width: 100,
+    alignSelf: 'flex-start',
+  },
   buttonText: {
-    color: "#FFFFFF",
+    color: colors.background,
     fontWeight: "700",
     fontSize: 17,
     letterSpacing: 0.5,
     textAlign: "center",
   },
-
   switchWrap: {
     flexDirection: "row",
     justifyContent: "center",
     marginTop: 28,
   },
-
   switchText: {
-    color: "#9A9A9C",
+    color: colors.textSecondary,
     marginRight: 6,
     fontSize: 14.5,
   },
-
   switchLink: {
-    color: "#FFFFFF",
+    color: colors.textPrimary,
     fontWeight: "700",
     fontSize: 15,
     textDecorationLine: "underline",
