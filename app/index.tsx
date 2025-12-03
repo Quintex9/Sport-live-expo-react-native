@@ -23,25 +23,18 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 // Globálny stav pre zachovanie módu pri navigácii
 let savedMode: 'live' | 'history' = 'live';
-let savedSport: 'football' | 'basketball' | 'baseball' | 'nfl' | 'hockey' | 'handball' = 'football';
 
 export default function App() {
-  // State pre zistenie aktuálneho športu
-  const [sport, setSportState] = useState(savedSport);
-  const setSport = (s: typeof sport) => { savedSport = s; setSportState(s); };
-
   // State pre prepínanie medzi Live a History
   const [mode, setModeState] = useState(savedMode);
   const setMode = (m: typeof mode) => { savedMode = m; setModeState(m); };
 
   // Načítanie dát z hookov
-  const liveData = useLiveMatches(sport);
+  const liveData = useLiveMatches("football");
   const historyData = useMatches();
   const activeData = mode === 'live' ? liveData : historyData;
   const { data, loading, refreshing, onRefresh } = activeData;
 
-  // State pre rozbalenie lig
-  const [leaguesExpanded, setLeaguesExpanded] = useState(false);
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
 
   // Extrahovanie unikátnych lig z dát
@@ -109,7 +102,7 @@ export default function App() {
         <View style={[styles.shell, isCompact && styles.shellCompact]}>
 
           {/* Hlavička */}
-          <Header sport={sport} count={filteredData.length} mode={mode} />
+          <Header sport="football" count={filteredData.length} mode={mode} />
 
           {/* Prepínač Live / Zápasy */}
           <View style={styles.modeToggle}>
