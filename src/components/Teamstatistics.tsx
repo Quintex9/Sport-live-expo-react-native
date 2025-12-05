@@ -8,8 +8,8 @@ interface TeamStatisticsProps {
 export default function TeamStatistics({ stats }: TeamStatisticsProps) {
   if (!stats) return null;
 
-  // PREPARE FORM ARRAY
-  const formArray = stats.form ? stats.form.split("") : [];
+  // Posledných 7 zápasov
+  const formArray = stats.form ? stats.form.split("").slice(-7) : [];
 
   const getFormColor = (char: string) => {
     switch (char) {

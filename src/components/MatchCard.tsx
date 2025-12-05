@@ -6,6 +6,14 @@ import { Link } from 'expo-router';
 
 // Komponent pre zobrazenie jedného zápasu
 export const MatchCard = ({ match, source }: { match: Match; source?: string }) => {
+  if (!match) {
+    return null;
+  }
+  
+  if (!match.fixture || !match.teams) {
+    return null;
+  }
+
   const { teams, goals, fixture } = match;
   
   const statusShort = fixture?.status?.short ?? "NS";

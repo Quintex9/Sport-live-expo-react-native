@@ -62,18 +62,24 @@ export const LeagueSelector = ({
           </TouchableOpacity>
 
           {/* Ostatné ligy */}
-          {leagues.map((league) => (
-            <TouchableOpacity
-              key={league?.id}
-              style={styles.leagueItem}
-              onPress={() => {
-                onSelect(String(league?.id));
-                setExpanded(false);
-              }}
-            >
-              <Text style={styles.leagueItemText}>{league?.name}</Text>
-            </TouchableOpacity>
-          ))}
+          {leagues.length > 0 ? (
+            leagues.map((league) => (
+              <TouchableOpacity
+                key={league?.id}
+                style={styles.leagueItem}
+                onPress={() => {
+                  onSelect(String(league?.id));
+                  setExpanded(false);
+                }}
+              >
+                <Text style={styles.leagueItemText}>{league?.name || `Liga ${league?.id}`}</Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.leagueItem}>
+              <Text style={[styles.leagueItemText, { color: colors.textSecondary }]}>Žiadne ligy</Text>
+            </View>
+          )}
         </ScrollView>
       )}
     </View>

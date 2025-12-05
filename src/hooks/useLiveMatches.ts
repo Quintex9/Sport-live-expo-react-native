@@ -9,9 +9,6 @@ export const useLiveMatches = (sport: string = 'Football') => {
         onError: (err) => {
             console.error('useLiveMatches error:', err);
         },
-        onSuccess: (data) => {
-            console.log('useLiveMatches loaded:', data?.length || 0, 'live matches');
-        },
     });
 
     return {

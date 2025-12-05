@@ -51,7 +51,7 @@ export default function TeamDetail() {
                 const found = st.find((t: any) => t.team.id == id);
                 setStanding(found ?? null);
             } catch (e) {
-                // Error handled silently
+            
             } finally {
                 setLoading(false);
             }

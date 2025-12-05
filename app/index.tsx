@@ -23,16 +23,21 @@ let savedMode: 'live' | 'history' = 'live';
 export default function App() {
   // State pre prepínanie medzi Live a History
   const [mode, setModeState] = useState(savedMode);
-  const setMode = (m: typeof mode) => { savedMode = m; setModeState(m); };
+  const setMode = (m: typeof mode) => { 
+    savedMode = m; 
+    setModeState(m);
+    // Resetuj filter pri zmene módu
+    setSelectedLeague(null);
+  };
+
+  // State pre typ zápasov (upcoming/finished) - len pre history mód
+  const [matchType, setMatchType] = useState<'upcoming' | 'finished'>('upcoming');
 
   // Načítanie dát z hookov
   const liveData = useLiveMatches("football");
-  const historyData = useMatches();
+  const historyData = useMatches(matchType);
   const activeData = mode === 'live' ? liveData : historyData;
   const { data, loading, refreshing, onRefresh, error } = activeData;
-
-  // Debug info
-  console.log(`[${mode}] Data:`, data?.length || 0, 'Loading:', loading, 'Error:', error);
 
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
 
@@ -43,7 +48,16 @@ export default function App() {
     const id = m.league?.id;
     if (id && !leagueMap.has(id)) {
       leagueMap.set(id, true);
-      leagues.push(m.league);
+      // Použi názov ligy, ak je prázdny alebo neexistuje, použij fallback
+      const leagueName = (m.league?.name && m.league.name.trim() !== '') 
+        ? m.league.name 
+        : `Liga ${id}`;
+      leagues.push({
+        id: id,
+        name: leagueName,
+        logo: m.league?.logo,
+        country: m.league?.country,
+      });
     }
   });
 
@@ -71,10 +85,15 @@ export default function App() {
       <FlatList
         key={`${mode}-${numColumns}`}
         data={filteredData}
-        keyExtractor={(item) => String(item.fixture?.id ?? item.id)}
-        renderItem={({ item }) => (
-          <MatchCard match={item} source={mode === 'history' ? 'history' : undefined} />
-        )}
+        keyExtractor={(item, index) => {
+          const key = String(item.fixture?.id ?? item.id ?? index);
+          return key;
+        }}
+        renderItem={({ item, index }) => {
+          return (
+            <MatchCard match={item} source={mode === 'history' ? 'history' : undefined} />
+          );
+        }}
         numColumns={numColumns}
         contentContainerStyle={[styles.listContent, isCompact && styles.listContentCompact]}
         columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
@@ -128,6 +147,34 @@ export default function App() {
               </Text>
             </TouchableOpacity>
           </View>
+
+          {/* Prepínač Upcoming / Finished - len pre history mód */}
+          {mode === 'history' && (
+            <View style={styles.modeToggle}>
+              <TouchableOpacity
+                style={[styles.modeButton, matchType === 'upcoming' && styles.modeButtonActive]}
+                onPress={() => {
+                  setMatchType('upcoming');
+                  setSelectedLeague(null);
+                }}
+              >
+                <Text style={[styles.modeButtonText, matchType === 'upcoming' && styles.modeButtonTextActive]}>
+                  Budúce
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modeButton, matchType === 'finished' && styles.modeButtonActive]}
+                onPress={() => {
+                  setMatchType('finished');
+                  setSelectedLeague(null);
+                }}
+              >
+                <Text style={[styles.modeButtonText, matchType === 'finished' && styles.modeButtonTextActive]}>
+                  Odohraté
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Dropdown / Výber lig */}
           <LeagueSelector

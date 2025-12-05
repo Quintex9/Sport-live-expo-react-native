@@ -74,5 +74,12 @@ export const normalizeSupabaseMatch = (m: any) => ({
     away: { id: m.away_team_id, name: m.away_team?.name ?? `Tím ${m.away_team_id}`, logo: m.away_team?.logo },
   },
   goals: { home: m.goals_home ?? 0, away: m.goals_away ?? 0 },
-  league: { id: m.league_id, name: "", season: m.season, round: m.round }
+  league: { 
+    id: m.league_id, 
+    name: m.league?.name ?? m.league_name ?? "", 
+    season: m.season, 
+    round: m.round,
+    logo: m.league?.logo,
+    country: m.league?.country_code 
+  }
 });
