@@ -73,127 +73,86 @@ export async function getLiveMatches(sport: string) {
   return response.map(normalizeMatch).sort((a: any, b: any) => scoreOrder(a.fixture.status.short) - scoreOrder(b.fixture.status.short));
 }
 
-export async function getMatches(matchType: 'upcoming' | 'finished' = 'upcoming') {
+export async function getMatches(
+  matchType: 'upcoming' | 'finished' = 'upcoming'
+) {
   try {
     const now = new Date();
-    const twoDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString();
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
     const nowISO = now.toISOString();
-    
-    // Live statusy ktoré nechceme v zozname
-    const liveStatuses = ['1H', '2H', 'HT', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE'];
-    
-    const { data, error } = await SupabaseClient
-      .from('fixtures')
-      .select('*, home_team:teams!home_team_id(id,name,logo), away_team:teams!away_team_id(id,name,logo), league:leagues!league_id(id,name,logo,country_code)')
-      .gte('date', twoDaysAgo)
-      .lt('date', todayEnd)
-      .order('date', { ascending: true })
-      .limit(50);
-    
-    
-    if (error) {
-      console.error('getMatches Supabase error:', error);
-      return [];
+
+    // Statusy, ktoré nesmú ísť do upcoming režimu
+    const LIVE_STATUSES = [
+      '1H', '2H', 'HT', 'ET', 'P', 'BT', 'INT', 'SUSP',
+      'LIVE', 'BREAK', 'INPLAY', 'ONGOING'
+    ];
+
+    /* ======================================================
+       UPCOMING – budúce zápasy (iba DB)
+       ====================================================== */
+    if (matchType === 'upcoming') {
+      const { data, error } = await SupabaseClient
+        .from('fixtures')
+        .select(`
+          *,
+          home_team:teams!home_team_id(id,name,logo),
+          away_team:teams!away_team_id(id,name,logo),
+          league:leagues!league_id(id,name,logo,country_code)
+        `)
+        .gte('date', nowISO)             // iba budúce zápasy
+        .order('date', { ascending: true })
+        .limit(120);
+
+      if (error) {
+        console.error('getMatches upcoming error:', error);
+        return [];
+      }
+
+      const fixtures = (data || []) as any[];
+
+      const filtered = fixtures
+        .filter(m => !LIVE_STATUSES.includes(m.status_short)) // nikdy live
+        .filter(m =>
+          m.status_short === 'NS' ||
+          m.date > nowISO
+        );
+
+      return filtered.map(normalizeSupabaseMatch);
     }
-    // Filter podľa typu zápasov
-    const filtered = (data || []).filter((m: any) => {
-      // Live statusy - nikdy nezobrazuj
-      if (liveStatuses.includes(m.status_short)) {
-        return false;
+
+    /* ======================================================
+       FINISHED – odohrané zápasy (iba DB)
+       ====================================================== */
+    if (matchType === 'finished') {
+      const { data, error } = await SupabaseClient
+        .from('fixtures')
+        .select(`
+          *,
+          home_team:teams!home_team_id(id,name,logo),
+          away_team:teams!away_team_id(id,name,logo),
+          league:leagues!league_id(id,name,logo,country_code)
+        `)
+        .eq('status_short', 'FT')              // iba finished
+        .order('date', { ascending: false })   // najnovšie hore
+        .limit(200);
+
+      if (error) {
+        console.error('getMatches finished error:', error);
+        return [];
       }
-      
-      if (matchType === 'upcoming') {
-        // NS zápasy - zobraz len ak sú v budúcnosti (upcoming)
-        if (m.status_short === 'NS') {
-          const isUpcoming = m.date > nowISO;
-          return isUpcoming;
-        }
-        
-        // Iné statusy (napr. CANC, POSTP) - zobraz len ak sú v budúcnosti
-        if (m.date > nowISO) {
-          return true;
-        }
-        
-        return false;
-      } else {
-        // Finished zápasy - zobraz len FT
-        if (m.status_short === 'FT') {
-          return true;
-        }
-        
-        return false;
-      }
-    });
-    
-    // Načítanie názvov lig z API pre všetky ligy v finished zápasoch
-    const uniqueLeagueIds = new Set(
-      filtered
-        .map((m: any) => m.league_id)
-        .filter((id: any) => id)
-    );
-    
-    const leagueNamesMap = new Map<number, string>();
-    if (uniqueLeagueIds.size > 0 && API_KEY) {
-      try {
-        const leagueIdsArray = Array.from(uniqueLeagueIds);
-        // Načítame názvy lig z API (max 10 naraz kvôli rate limit)
-        const leaguePromises = leagueIdsArray.slice(0, 10).map(async (leagueId) => {
-          try {
-            const res = await fetch(
-              `https://v3.football.api-sports.io/leagues?id=${leagueId}`,
-              {
-                headers: {
-                  "x-apisports-key": API_KEY,
-                  "x-rapidapi-host": "v3.football.api-sports.io",
-                },
-              }
-            );
-            if (!res.ok) return null;
-            const apiData = await res.json();
-            const league = apiData.response?.[0]?.league;
-            if (league?.name) {
-              return { id: leagueId, name: league.name };
-            }
-          } catch (e) {
-            // Ignoruj chyby pri načítaní jednotlivých lig
-          }
-          return null;
-        });
-        
-        const results = await Promise.all(leaguePromises);
-        results.forEach((result) => {
-          if (result) {
-            leagueNamesMap.set(result.id, result.name);
-          }
-        });
-      } catch (e) {
-        // Ignoruj chyby pri načítaní názvov lig
-      }
+
+      const fixtures = (data || []) as any[];
+
+      return fixtures.map(normalizeSupabaseMatch);
     }
-    
-    const result = filtered.map((m: any) => {
-      const normalized = normalizeSupabaseMatch(m);
-      // Použi názov z API ak existuje, inak použij z databázy
-      if (m.league_id && leagueNamesMap.has(m.league_id)) {
-        const apiName = leagueNamesMap.get(m.league_id);
-        if (apiName) {
-          normalized.league.name = apiName;
-        }
-      }
-      // Ak stále nemá názov, použij fallback
-      if (!normalized.league.name || normalized.league.name.trim() === '') {
-        normalized.league.name = `Liga ${m.league_id}`;
-      }
-      return normalized;
-    });
-    return result;
+
+    return [];
+
   } catch (e) {
-    // Ak Supabase nie je nakonfigurovaný, vráť prázdne pole
-    console.error('getMatches error:', e);
+    console.error('getMatches global error:', e);
     return [];
   }
 }
+
 
 // Načítanie detailu zápasu - najprv API, ak prázdne tak Supabase
 export async function getMatchDetail(fixtureId: string) {
